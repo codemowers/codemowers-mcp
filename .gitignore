@@ -1,0 +1,7 @@
+/codemowers-mcp
+*.test
+coverage.out
+.idea/
+.vscode/
+.DS_Store
+skaffold.env

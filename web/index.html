@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="The Codemowers guide to building, developing and running applications on Kubernetes.">
+<title>Zen of Kubernetes · Codemowers</title>
+<link rel="stylesheet" href="/style.css">
+<link rel="icon" href="data:,">
+</head>
+<body>
+<a class="skip" href="#guidance">Skip to the guidance</a>
+<header class="masthead"><a class="brand" href="/">CODEMOWERS</a><nav aria-label="Main"><a href="#contents">The guide</a><a href="#connect">MCP access</a></nav></header>
+<main>
+<header class="hero"><p class="eyebrow">A field guide for software that runs.</p><h1>Zen of<br><em>Kubernetes.</em></h1><p class="intro">Build deliberately. Let the platform do its job.</p><p class="scope">Practical guidance for developing and deploying on bare-metal Kubernetes, also useful on managed cloud and local clusters. Discover the target platform’s capabilities and policies before adapting examples.</p>
+<div class="zen">
+<ol class="zen-column">
+<li><button class="zen-principle" type="button" aria-describedby="zen-detail-1">Don’t redefine defaults.</button><span class="zen-detail" id="zen-detail-1" role="note">Repeating a default in code, an image and a chart makes it unclear which setting controls behavior. Deployment overrides should express actual differences. <a href="#developing/general">Read the guidance →</a></span></li>
+<li><button class="zen-principle" type="button" aria-describedby="zen-detail-2">One process per container.</button><span class="zen-detail" id="zen-detail-2" role="note">Run the application directly as PID 1, with threads where appropriate. Keep independent process lifecycles in separate containers. <a href="#building/general">Read the guidance →</a></span></li>
+<li><button class="zen-principle" type="button" aria-describedby="zen-detail-3">Let Kubernetes orchestrate.</button><span class="zen-detail" id="zen-detail-3" role="note">Keep scheduling, supervision and worker replication in the platform. Application containers should execute work, not run their own orchestration system. <a href="#deploying/workloads">Read the guidance →</a></span></li>
+<li><button class="zen-principle" type="button" aria-describedby="zen-detail-4">Keep application containers stateless.</button><span class="zen-detail" id="zen-detail-4" role="note">A replacement Pod must be able to resume service without the old container filesystem. Put durable data in deliberately provisioned backing services. <a href="#deploying/storage">Read the guidance →</a></span></li>
+<li><button class="zen-principle" type="button" aria-describedby="zen-detail-5">Make secrets easy to rotate. Never put them in images.</button><span class="zen-detail" id="zen-detail-5" role="note">Generated secrets and secret stores both work. Keep credentials independent of images and make rotation quick: provision replacements, update every consumer, then revoke old credentials. <a href="#deploying/security">Read the guidance →</a></span></li>
+<li><button class="zen-principle" type="button" aria-describedby="zen-detail-6">Metrics for alerting. Logs for triage. Traces for performance tuning.</button><span class="zen-detail" id="zen-detail-6" role="note">Alert on measurable symptoms with metrics, investigate events with logs, and use traces to locate latency and bottlenecks across service calls. Keep credentials and sensitive payloads out of telemetry. <a href="#deploying/observability">Read the guidance →</a></span></li>
+<li><button class="zen-principle" type="button" aria-describedby="zen-detail-7">Handle expected failures; let unexpected failures surface.</button><span class="zen-detail" id="zen-detail-7" role="note">Recover only where the failure is understood. Empty results and success acknowledgements must not disguise broken work. <a href="#developing/general">Read the guidance →</a></span></li>
+<li><button class="zen-principle" type="button" aria-describedby="zen-detail-8">Make retried work safe to repeat.</button><span class="zen-detail" id="zen-detail-8" role="note">A worker can finish a side effect and die before acknowledging it. Repeated delivery must not charge twice or duplicate data. <a href="#developing/general">Read the guidance →</a></span></li>
+<li><button class="zen-principle" type="button" aria-describedby="zen-detail-9">Keep health checks local; justify every liveness probe.</button><span class="zen-detail" id="zen-detail-9" role="note">Readiness controls traffic; liveness triggers restarts. A shared dependency outage should not restart every application replica. <a href="#developing/health-checks">Read the guidance →</a></span></li>
+<li><button class="zen-principle" type="button" aria-describedby="zen-detail-10">Single sign-on is not an enterprise feature.</button><span class="zen-detail" id="zen-detail-10" role="note">Use an external identity provider; do not embed an IdP or implement password handling in the application. Keep tenant, record and operation authorization in the application. <a href="#developing/architecture">Read the guidance →</a></span></li>
+</ol>
+<ol class="zen-column" start="11">
+<li><button class="zen-principle" type="button" aria-describedby="zen-detail-11">Verify certificates and hostnames, even inside the cluster.</button><span class="zen-detail" id="zen-detail-11" role="note">Encryption is useful only with the intended peer. Configure client trust and renewal handling; record the separate Prometheus transport choice. <a href="#deploying/networking">Read the guidance →</a></span></li>
+<li><button class="zen-principle" type="button" aria-describedby="zen-detail-12">Discover capabilities before depending on them.</button><span class="zen-detail" id="zen-detail-12" role="note">An example or platform name does not prove an operator is installed, authorized or healthy. Inspect APIs, controllers and policy bindings. <a href="#deploying/discovery">Read the guidance →</a></span></li>
+<li><button class="zen-principle" type="button" aria-describedby="zen-detail-13">Build once. Promote the same image digest.</button><span class="zen-detail" id="zen-detail-13" role="note">Staging and production should run the artifact that was checked. Record image and configuration revisions so a release can be reproduced. <a href="#building/ci">Read the guidance →</a></span></li>
+<li><button class="zen-principle" type="button" aria-describedby="zen-detail-14">Drain on shutdown; tolerate abrupt termination.</button><span class="zen-detail" id="zen-detail-14" role="note">Stop accepting work on SIGTERM and finish or return in-flight work within the deadline. Correctness must also survive a forced stop. <a href="#developing/general">Read the guidance →</a></span></li>
+<li><button class="zen-principle" type="button" aria-describedby="zen-detail-15">A retained volume is not a backup.</button><span class="zen-detail" id="zen-detail-15" role="note">Keeping a volume after uninstall does not protect against corruption or data loss. Define backups and verify a recovery procedure. <a href="#deploying/storage">Read the guidance →</a></span></li>
+<li><button class="zen-principle" type="button" aria-describedby="zen-detail-16">Listen on IPv6 as well as IPv4.</button><span class="zen-detail" id="zen-detail-16" role="note">The application process must accept both address families; a Kubernetes Service cannot fix an IPv4-only listener. Local Compose may remain IPv4-only. <a href="#deploying/networking">Read the guidance →</a></span></li>
+<li><button class="zen-principle" type="button" aria-describedby="zen-detail-17">Keep dependency requests beside the application.</button><span class="zen-detail" id="zen-detail-17" role="note">Use namespace-local requests for operator or provider-managed databases, caches and identity registrations. Platform administrators manage the shared services. <a href="#deploying/storage">Read the guidance →</a></span></li>
+<li><button class="zen-principle" type="button" aria-describedby="zen-detail-18">Let applicable admission policies supply platform defaults.</button><span class="zen-detail" id="zen-detail-18" role="note">Keep platform configuration in discovered, applicable policies. The deployment guide covers networking, TLS, trust, security, storage and ingress conventions, with explicit values when policies do not supply them. <a href="#deploying/general">Read the guidance →</a></span></li>
+<li><button class="zen-principle" type="button" aria-describedby="zen-detail-19">An application doesn’t own the cluster. A Helm release doesn’t own the namespace.</button><span class="zen-detail" id="zen-detail-19" role="note">Treat both as shared infrastructure. Isolate instances with release-specific names and selectors; leave shared operators and namespace lifecycle to the platform. <a href="#deploying/general">Read the guidance →</a></span></li>
+<li class="zen-secret"><button class="zen-principle" type="button" aria-label="Twentieth principle: There are no more excuses for sloppy engineering."><span class="zen-hint" aria-hidden="true">…</span><span class="zen-reveal">There are no more excuses for sloppy engineering.</span></button></li>
+</ol>
+</div>
+</header>
+<section id="contents" class="contents" aria-labelledby="contents-title"><p class="eyebrow">From source to service</p><h2 id="contents-title">The guide</h2><div class="contents-grid">{{range .Categories}}{{if .Sections}}
+<div><h3><a href="#{{.ID}}">{{.Title}}</a></h3><ul>{{range .Sections}}<li><a href="#{{.Path}}">{{.Title}}</a></li>{{end}}</ul></div>{{end}}{{end}}</div></section>
+<div id="guidance">{{range .Categories}}{{if .Sections}}<section class="category" id="{{.ID}}"><header class="category-heading"><p class="eyebrow">The guide</p><h2>{{.Title}}</h2><a href="#contents">Back to contents ↑</a></header>{{range .Sections}}
+<article id="{{.Path}}"><header class="article-heading"><p class="document-path">{{.Path}}</p><h3>{{.Title}}</h3><a class="source" target="_blank" rel="noopener noreferrer" href="/advisory/{{.Path}}.md">Markdown ↗</a></header><div class="prose">{{.HTML}}</div></article>
+{{end}}</section>{{end}}{{end}}</div>
+<section id="connect" class="connect">
+<p class="eyebrow">For your coding agent</p><h2>The same guide, over MCP.</h2>
+<p>Connect using Streamable HTTP. No sign-in or API key is required. Choose project scope to share setup with a repository, or user scope to use it across projects.</p>
+<pre><code>{{.Endpoint}}</code></pre>
+<h3>Codex</h3>
+<h4>Global · your user account</h4>
+<p>This command adds the server to your user configuration, normally <code>~/.codex/config.toml</code>:</p>
+<pre><code>codex mcp add codemowers --url {{.Endpoint}}</code></pre>
+<h4>Project · this repository</h4>
+<p>Add this table to <code>.codex/config.toml</code> in the project root, preserving existing settings. Codex loads project configuration for trusted projects.</p>
+<pre><code>[mcp_servers.codemowers]
+url = "{{.Endpoint}}"</code></pre>
+<p><a href="https://developers.openai.com/codex/mcp" target="_blank" rel="noopener noreferrer">Codex MCP documentation ↗</a></p>
+<h3>Claude Code</h3>
+<h4>Global · your user account</h4>
+<pre><code>claude mcp add --transport http --scope user codemowers {{.Endpoint}}</code></pre>
+<h4>Project · this repository</h4>
+<p>Run from the project root. This creates or updates <code>.mcp.json</code>, which can be committed for the team. Claude Code prompts before using project-scoped servers.</p>
+<pre><code>claude mcp add --transport http --scope project codemowers {{.Endpoint}}</code></pre>
+<p><a href="https://code.claude.com/docs/en/mcp" target="_blank" rel="noopener noreferrer">Claude Code MCP documentation ↗</a></p>
+<h3>Run locally with Docker</h3>
+<p>Once an image is published, replace <code>VERSION</code> with its published tag, or use an image digest:</p>
+<pre><code>docker run --rm --name codemowers-mcp \
+  -p 127.0.0.1:3000:3000 \
+  -e PUBLIC_URL=http://localhost:3000 \
+  ghcr.io/codemowers/codemowers-mcp:VERSION</code></pre>
+<p>Open <a href="http://localhost:3000" target="_blank" rel="noopener noreferrer">localhost:3000 ↗</a> for the guide. For local MCP access, substitute <code>http://localhost:3000/mcp</code> in the setup snippets above. Stop the container with Ctrl-C.</p>
+<p>Call <code>get_engineering_advisory</code> without arguments for the index, or supply a document <code>path</code>. Documents are also available as MCP resources. Discover the target cluster’s capabilities and policies before provisioning.</p>
+</section>
+</main><footer><span>Codemowers · Zen of Kubernetes</span><a href="#contents">Back to the guide ↑</a></footer>
+</body>
+</html>

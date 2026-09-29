@@ -1,0 +1,24 @@
+apiVersion: skaffold/v3
+kind: Config
+metadata:
+  name: codemowers-mcp
+build:
+  local:
+    useBuildkit: true
+  artifacts:
+    - image: codemowers-mcp
+      docker:
+        dockerfile: Dockerfile
+deploy:
+  kubectl: {}
+manifests:
+  helm:
+    releases:
+      - name: mcp
+        chartPath: chart
+        skipBuildDependencies: true
+portForward:
+  - resourceType: deployment
+    resourceName: codemowers-mcp
+    port: 3000
+    localPort: 3000

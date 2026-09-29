@@ -1,0 +1,5 @@
+.git
+codemowers-mcp
+chart
+*.test
+coverage.out

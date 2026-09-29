@@ -1,0 +1,10 @@
+# Deployment networking
+
+- Use service names in Compose and namespace-qualified service names in Kubernetes. Align Service selectors, target ports and application listeners; configure instance hostnames through deployment values.
+- Support IPv6 and IPv4 in Kubernetes: bind to `::` with IPv4 acceptance or provide separate listeners. `0.0.0.0` alone is IPv4-only; a Service cannot change the process's bind address. Inspect image defaults and runtime overrides together. Local Compose may use IPv4-only bindings.
+- Bound inter-service calls with timeouts; retry only operations that tolerate repetition, using backoff and a finite budget.
+- Keep TLS configurable in software. Local Compose runs without TLS; Kubernetes application and backing-service connections use verified TLS. Prometheus transport is a separate choice in `deploying/observability`. Never bake deployment certificates or trust paths into images.
+- Use `deploying/discovery` to find suitable issuers, allowed hostnames and trust resources. Prefer an available issuer whose documented purpose meets the connection's requirements; provision a new one only when necessary. Helm unset/default behavior belongs to `deploying/general`.
+- Configure servers to load certificates and clients to trust the selected issuer and verify hostnames. Mount the discovered trust bundle when needed; certificate issuance does not configure client trust. Arrange reload or restart after renewal. TLS does not replace application authentication.
+- Expose browser-facing routes through Ingress. Align certificate DNS names, Ingress TLS hosts, public URLs and OIDC redirect URIs. Keep background workers and backing-service administration internal; health and metrics use the listener in `developing/metrics`.
+- When a namespace applies default-deny ingress, allow the selected Ingress controller's Pods to reach the application's Service port with a NetworkPolicy. Match the controller's discovered namespace and Pod labels; do not allow broad namespace or cluster-wide ingress. Keep health and metrics access in separate rules when they use different callers or ports.

@@ -1,0 +1,10 @@
+services:
+  codemowers-mcp:
+    build: .
+    read_only: true
+    ports:
+      - "127.0.0.1:3000:3000"
+      - "127.0.0.1:3001:3001"
+    environment:
+      PUBLIC_URL: http://localhost:3000
+    stop_grace_period: 30s
