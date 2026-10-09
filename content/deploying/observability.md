@@ -12,7 +12,8 @@ Record the transport and, for HTTPS, its nonsecret certificate/trust provisionin
 
 ## Monitoring integration
 
-- Discover the installed monitoring APIs and controller. Use its cluster-specific resource guidance; without an operator, use the established Prometheus configuration mechanism. Do not install monitoring infrastructure through the application chart.
-- Detect optional resources independently with Helm capabilities, for example `monitoring.coreos.com/v1/PodMonitor` and `monitoring.coreos.com/v1/PrometheusRule`. Match release-specific workload labels and the monitoring system's discovery selectors. Keep application metrics available when these APIs are absent.
+- Discover the installed monitoring APIs and controller. When [Prometheus Operator](https://prometheus-operator.dev/docs/getting-started/introduction/) is available, use its cluster-specific resource guidance and [API reference](https://prometheus-operator.dev/docs/api-reference/api/); otherwise use the established Prometheus configuration mechanism. Do not install monitoring infrastructure through the application chart.
+- Create a `PodMonitor` or `ServiceMonitor`, as appropriate for the discovered integration, in the same namespace as the workload it monitors. Verify that the monitoring system's namespace and resource selectors include it, and that its selectors match the release-specific Pods or Services.
+- Detect optional resources independently with Helm capabilities: `monitoring.coreos.com/v1/PodMonitor`, `monitoring.coreos.com/v1/ServiceMonitor` and `monitoring.coreos.com/v1/PrometheusRule`. API availability alone does not establish selection or scraping. Keep application metrics available when these APIs are absent.
 - Follow the unset Helm defaults in `deploying/general`; provide explicit deployment values for required settings that policies or resource defaults do not supply. Inspect admitted configuration and verify scraping succeeds.
 - Configure health probes on the internal listener and collect stdout/stderr through the platform log pipeline.

@@ -1,11 +1,15 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"image/png"
 	"io/fs"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
+	"regexp"
 	"strings"
 	"testing"
 	"testing/fstest"
@@ -145,6 +149,90 @@ func TestWebsiteAndHTTPBoundaries(t *testing.T) {
 	}
 }
 
+func TestPreviewLogo(t *testing.T) {
+	handler, err := newHandler(bundled(t), "https://mcp.codemowers.io")
+	if err != nil {
+		t.Fatal(err)
+	}
+	page := httptest.NewRecorder()
+	handler.ServeHTTP(page, httptest.NewRequest("GET", "/", nil))
+	if !strings.Contains(page.Body.String(), `<meta property="og:image" content="https://mcp.codemowers.io/codemowers-logo.png">`) {
+		t.Fatal("preview image URL missing")
+	}
+	expected, err := assets.ReadFile("web/codemowers-logo.png")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, method := range []string{"GET", "HEAD"} {
+		response := httptest.NewRecorder()
+		request := httptest.NewRequest(method, "/codemowers-logo.png", nil)
+		request.Header.Set("User-Agent", "Slackbot-LinkExpanding 1.0 (+https://api.slack.com/robots)")
+		handler.ServeHTTP(response, request)
+		if response.Code != http.StatusOK || response.Header().Get("Content-Type") != "image/png" {
+			t.Fatalf("%s preview image: HTTP %d, type %q", method, response.Code, response.Header().Get("Content-Type"))
+		}
+		if method == "HEAD" {
+			if response.Body.Len() != 0 {
+				t.Fatal("HEAD returned image body")
+			}
+			continue
+		}
+		if !bytes.Equal(response.Body.Bytes(), expected) {
+			t.Fatal("preview image differs from bundled logo")
+		}
+		config, err := png.DecodeConfig(response.Body)
+		if err != nil || config.Width != 868 || config.Height != 868 {
+			t.Fatalf("preview image dimensions differ from metadata: %+v, %v", config, err)
+		}
+	}
+}
+
+func TestHeadingPermalinksAndGitHubSources(t *testing.T) {
+	sections, err := loadAdvisories(fstest.MapFS{
+		"developing/first.md": &fstest.MapFile{Data: []byte("# First\n\n## Shared title\n\n## Shared title\n")},
+		"building/second.md":  &fstest.MapFile{Data: []byte("# Second\n\n## Shared title\n")},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	page, err := renderWebsite(append(bundled(t), sections...), "https://mcp.codemowers.io/mcp")
+	if err != nil {
+		t.Fatal(err)
+	}
+	ids := map[string]bool{}
+	for _, match := range regexp.MustCompile(`\bid="([^"]+)"`).FindAllSubmatch(page, -1) {
+		id := string(match[1])
+		if ids[id] {
+			t.Errorf("duplicate anchor %q", id)
+		}
+		ids[id] = true
+	}
+	for _, match := range regexp.MustCompile(`href="#([^"]+)"`).FindAllSubmatch(page, -1) {
+		target, err := url.PathUnescape(string(match[1]))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !ids[target] {
+			t.Errorf("permalink has no target: %s", match[1])
+		}
+	}
+	for _, section := range sections {
+		for _, want := range []string{
+			`class="heading-link" href="#` + strings.ReplaceAll(section.Path, "/", "%2f") + `"`,
+			`href="#` + section.Path + `/shared-title"`,
+			`href="https://github.com/codemowers/codemowers-mcp/blob/main/content/` + section.Path + `.md"`,
+			`aria-label="View ` + section.Title + ` on GitHub"`,
+		} {
+			if !strings.Contains(string(page), want) {
+				t.Errorf("missing heading or source link: %s", want)
+			}
+		}
+	}
+	if len(regexp.MustCompile(`href="#(?:developing/first|building/second)/shared-title[^"]*"`).FindAll(page, -1)) != 3 {
+		t.Fatal("not every subsection has a permalink")
+	}
+}
+
 func TestContentValidationAndSafeRendering(t *testing.T) {
 	for _, tc := range []struct{ name, body string }{{"index.md", "# Reserved\n"}, {"bad..path.md", "# Invalid\n"}, {"doc.md", "Missing title\n"}} {
 		_, err := loadAdvisories(fstest.MapFS{tc.name: &fstest.MapFile{Data: []byte(tc.body)}})
@@ -165,7 +253,7 @@ func TestContentValidationAndSafeRendering(t *testing.T) {
 			t.Errorf("unsafe output %q", bad)
 		}
 	}
-	if !strings.Contains(string(page), "<h4>Detail</h4>") {
+	if !strings.Contains(string(page), `<h4 id="example/doc/detail">Detail <a class="heading-permalink" href="#example/doc/detail"`) {
 		t.Fatal("document heading hierarchy was not preserved")
 	}
 	// Catch dangling cross-document references after extraction.

@@ -71,6 +71,9 @@ func newHandler(sections []Advisory, publicURL string) (http.Handler, error) {
 	})
 	mux.HandleFunc("GET /guide", func(w http.ResponseWriter, r *http.Request) { http.Redirect(w, r, "/", http.StatusMovedPermanently) })
 	mux.HandleFunc("GET /style.css", func(w http.ResponseWriter, r *http.Request) { http.ServeFileFS(w, r, assets, "web/style.css") })
+	mux.HandleFunc("GET /codemowers-logo.png", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFileFS(w, r, assets, "web/codemowers-logo.png")
+	})
 	for _, section := range sections {
 		mux.HandleFunc("GET /advisory/"+section.Path+".md", func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Type", "text/markdown; charset=utf-8")

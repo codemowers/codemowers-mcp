@@ -23,6 +23,7 @@ Use the [codemowers/lolcatz repository](https://github.com/codemowers/lolcatz) f
 - Run one application process per container, optionally with threads sharing its address space. Launch it directly using JSON exec-form ENTRYPOINT/CMD so it receives SIGTERM as PID 1. If a setup script is unavoidable, end it with `exec`. Lifecycle behavior belongs to `developing/general`.
 - Follow `deploying/workloads` for orchestration. Do not add init wrappers such as dumb-init or tini to new applications. If the application launches subprocesses, it must reap them and propagate cancellation.
 - Supply UID/GID at deployment time, preferably through applicable platform policy. Do not create accounts or bake an application UID into Dockerfile USER. Keep code root-owned and readable/executable by the runtime identity; do not recursively chown it. Use a read-only root filesystem with explicit writable mounts; see `deploying/security`.
+- CA certificates belong in runtime trust configuration, not application images. This includes public and private CA bundles, even for `scratch` images. Follow `deploying/networking` for namespace trust distribution, Pod mounts and client configuration; trust changes must not require rebuilding the application image.
 
 ## Porting legacy applications
 

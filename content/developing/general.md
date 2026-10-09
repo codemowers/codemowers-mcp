@@ -9,6 +9,7 @@ Apply these conventions to new applications. Assess existing applications case b
 - Configure endpoints, credentials and environment-specific behavior at runtime. Treat compatible backing services as replaceable attachments: switching their endpoint or credentials should not require a source change. Use consistent environment-variable names across environments and keep each default in one layer: application, image or deployment. For complex settings, use a configuration library that combines files and environment variables. Helm environment mappings and rollouts belong to `deploying/general`.
 - Keep code at its sole call site instead of adding single-use helper wrappers. Extract helpers for actual reuse; framework handlers, callbacks and entrypoints are not wrappers.
 - Write readable YAML with indented block mappings and sequences. Retain explicit empty collections where meaningful, and embedded JSON only where the consuming API requires it. End text files with a newline. Ignore generated files and secrets as described in `building/general`.
+- Follow `developing/git` for Git configuration, synchronizing branches and committing changes.
 
 ## Failures and lifecycle
 

@@ -2,6 +2,8 @@
 
 Identify the target and inspect its capabilities before provisioning. Use advertised Driftmower tools, direct `kubectl`, or both when a response lacks detail. CRD-specific examples belong to the target cluster advisory; examples never establish availability.
 
+If the project has a `skaffold.env` file, read it to discover the relevant Kubernetes context and namespace, and verify that target before cluster operations. Never assume the user has only one kubeconfig context configured or that the current context is the project's target. If the context or namespace remains unclear, resolve it from established project configuration or with the user before proceeding.
+
 ## With Driftmower MCP
 
 Identify the connection's cluster using `get_cluster_identity` and its platform using `get_cluster_platform` when advertised. Record whether it is k3s, vanilla Kubernetes, EKS, AKS or another verified platform. Treat unknown or conflicting evidence as a question to resolve with the user, not as vanilla Kubernetes. Before using local `kubectl`, match its Kubernetes API URL to a verified kubeconfig context. Discover the tools advertised by that connection instead of assuming a particular Driftmower version exposes every tool.
@@ -85,7 +87,7 @@ Match policies to bindings, resource rules, operations, namespace/object selecto
 
 ### Check TLS and other prerequisites
 
-Discover issuer and certificate APIs before querying their instances. If cert-manager's APIs are installed, inspect the available cluster-scoped and namespaced issuers:
+Discover issuer and certificate APIs before querying their instances. If [cert-manager](https://cert-manager.io/docs/usage/certificate/)'s APIs are installed, inspect the available cluster-scoped and namespaced issuers:
 
 ```sh
 kubectl --context verified-context get clusterissuers.cert-manager.io -o yaml
@@ -93,6 +95,8 @@ kubectl --context verified-context --namespace existing-namespace get issuers.ce
 ```
 
 Read each issuer's own description and readiness to determine its suitability. Discover the trust bundle and the namespace's network posture from relevant ConfigMaps, NetworkPolicies and platform guidance. Inspect only the required objects and Secret key names; do not print credential values. No issuer, trust-bundle name or secret generator is implied by another resource's example.
+
+Discover [trust-manager](https://cert-manager.io/docs/trust/trust-manager/) independently of certificate issuance. If its API and controller are available, inspect the relevant cluster-scoped `Bundle` resources, their readiness, target formats and namespace selectors, then verify the resulting trust data exists in the workload namespace. Inspect applicable mutation policies separately to establish Pod mounts and trust-path configuration; bundle distribution alone does not supply them. Shared trust resources remain under platform ownership as described in `deploying/storage`.
 
 After discovery, apply the Helm defaults and deployment verification rules in `deploying/general`.
 

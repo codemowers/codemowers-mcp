@@ -14,6 +14,7 @@ import (
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/ast"
 	"github.com/yuin/goldmark/extension"
+	"github.com/yuin/goldmark/parser"
 	"github.com/yuin/goldmark/renderer"
 	"github.com/yuin/goldmark/text"
 	"github.com/yuin/goldmark/util"
@@ -91,6 +92,22 @@ func (r referenceRenderer) RegisterFuncs(register renderer.NodeRendererFuncRegis
 	})
 }
 
+type headingRenderer struct{}
+
+func (headingRenderer) RegisterFuncs(register renderer.NodeRendererFuncRegisterer) {
+	register.Register(ast.KindHeading, func(w util.BufWriter, source []byte, node ast.Node, entering bool) (ast.WalkStatus, error) {
+		heading := node.(*ast.Heading)
+		value, _ := heading.AttributeString("id")
+		id := html.EscapeString(string(value.([]byte)))
+		if entering {
+			_, err := fmt.Fprintf(w, `<h%d id="%s">`, heading.Level, id)
+			return ast.WalkContinue, err
+		}
+		_, err := fmt.Fprintf(w, ` <a class="heading-permalink" href="#%s" aria-label="Link to this heading">#</a></h%d>`+"\n", id, heading.Level)
+		return ast.WalkContinue, err
+	})
+}
+
 type category struct {
 	ID, Title string
 	Sections  []Advisory
@@ -101,7 +118,7 @@ func renderWebsite(sections []Advisory, endpoint string) ([]byte, error) {
 	for _, section := range sections {
 		paths[section.Path] = true
 	}
-	markdown := goldmark.New(goldmark.WithExtensions(extension.GFM), goldmark.WithRendererOptions(renderer.WithNodeRenderers(util.Prioritized(referenceRenderer{paths}, 100))))
+	markdown := goldmark.New(goldmark.WithExtensions(extension.GFM), goldmark.WithParserOptions(parser.WithAutoHeadingID()), goldmark.WithRendererOptions(renderer.WithNodeRenderers(util.Prioritized(referenceRenderer{paths}, 100), util.Prioritized(headingRenderer{}, 100))))
 	groups := []category{{ID: "developing", Title: "Developing"}, {ID: "building", Title: "Building"}, {ID: "deploying", Title: "Deploying"}}
 	for _, section := range sections {
 		_, body, _ := strings.Cut(section.Markdown, "\n")
@@ -110,6 +127,8 @@ func renderWebsite(sections []Advisory, endpoint string) ([]byte, error) {
 		if err := ast.Walk(document, func(node ast.Node, entering bool) (ast.WalkStatus, error) {
 			if heading, ok := node.(*ast.Heading); ok && entering {
 				heading.Level = min(heading.Level+2, 6)
+				id, _ := heading.AttributeString("id")
+				heading.SetAttributeString("id", []byte(section.Path+"/"+string(id.([]byte))))
 			}
 			if entering {
 				var destination []byte
@@ -161,6 +180,7 @@ func renderWebsite(sections []Advisory, endpoint string) ([]byte, error) {
 	err = page.Execute(&result, struct {
 		Categories []category
 		Endpoint   string
-	}{groups, endpoint})
+		PublicURL  string
+	}{groups, endpoint, strings.TrimSuffix(endpoint, "/mcp")})
 	return result.Bytes(), err
 }
