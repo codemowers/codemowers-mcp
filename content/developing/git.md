@@ -1,5 +1,9 @@
 # Git usage
 
+## Production data
+
+Never add production data to Git, including tests, fixtures, examples, documentation, snapshots or generated files. Use synthetic values instead of real hostnames, identities, IDs, payloads and logs. Keep production data used for troubleshooting outside the repository.
+
 ## History and integration
 
 Use linear history for applications and microservices. Rebase feature work onto the target branch, then integrate with rebase or fast-forward; squash intermediate fixups when a request represents one logical change. This keeps changes easier to review, bisect and revert. See [Git SCM's rebasing guide](https://git-scm.com/book/en/v2/Git-Branching-Rebasing).
