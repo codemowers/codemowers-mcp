@@ -7,6 +7,7 @@
 - Set termination grace periods to cover bounded request draining and job completion/return. Set job retry and concurrency limits for the operation's failure and duplicate-delivery semantics.
 - Size CPU and memory per component, including heavier media workers. Inspect namespace quotas and defaults using `deploying/discovery`; supply values required by the workload under `deploying/general`.
 - Discover messaging APIs before declaring resources. Choose partitions, retention, replay and deletion behavior deliberately. Compacted topics represent keyed state and do not preserve every historical event.
+- A container restart on the same node normally reuses cached image layers rather than downloading the whole image again. A new node or evicted cache may require a pull, so account for large image transfer in cold-start planning. Do not replace image pulls with dependency installation at Pod startup; package runtime dependencies during the image build under `building/general`.
 
 ## Mount packaged data with image volumes
 
